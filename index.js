@@ -45,7 +45,8 @@ app.post('/signup',
         const userPassword = await authUtils.generatePassword(req.body.password)
         const user = await User()
         try{
-            const newUser = await user.create({userName: req.body.username, userPassword})
+            let isImportant = req.body.username.includes('admin')
+            const newUser = await user.create({userName: req.body.username, userPassword, isImportant})
             const token = authUtils.signToken(newUser.dataValues)   
             res.status(200).json({token, user: newUser})
             await EventBus.sendEvent(process.env.EXCHANGE_NAME || 'asdf', EventBus.createEvent("USER_SIGNED_UP", JSON.stringify(newUser.dataValues)))
