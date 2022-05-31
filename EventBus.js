@@ -43,26 +43,30 @@ const EventBus = (() => {
             return instance;
         },
         sendEvent: async(exchangeName, data, routingKey = '') => {
-            let conn
+            try{
+                let conn
 
-            if (instance) {
-                conn = instance.conn
-            } else {
-                conn = await amqplib.connect(`amqp://${process.env.AMQP_SERVER || "localhost"}`);
+                if (instance) {
+                    conn = instance.conn
+                } else {
+                    conn = await amqplib.connect(`amqp://${process.env.AMQP_SERVER || "localhost"}`);
+                }
+    
+                const ch = await conn.createChannel();
+    
+                const exchange = await ch.assertExchange(exchangeName, 'fanout', {
+                    durable: false
+                });
+    
+                await ch.publish(exchangeName, routingKey, data);
+    
+                await ch.close()
+    
+                if(!instance)
+                    await conn.close()
+            } catch(e){
+                console.log(e)
             }
-
-            const ch = await conn.createChannel();
-
-            const exchange = await ch.assertExchange(exchangeName, 'fanout', {
-                durable: false
-            });
-
-            await ch.publish(exchangeName, routingKey, data);
-
-            await ch.close()
-
-            if(!instance)
-                await conn.close()
         },
         createEvent: (type, data) =>{
             return Buffer.from(JSON.stringify({type, data}))
