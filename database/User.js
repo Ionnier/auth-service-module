@@ -6,7 +6,8 @@ module.exports = async () => {
         {
             userName: {
                 type: Sequelize.STRING,
-                allowNull: false
+                allowNull: false,
+                unique: true
             },
             userPassword: {
                 type: Sequelize.STRING,

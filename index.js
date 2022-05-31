@@ -3,6 +3,7 @@ const express = require('express')
 const { body, validationResult } = require('express-validator');
 const User = require('./database/User')
 const authUtils = require('./utils/authUtils')
+const EventBus = require('./EventBus')
 
 const app = express()
 
@@ -27,6 +28,7 @@ app.post('/login',
         }
         const token = authUtils.signToken(dbUser.dataValues)   
         res.status(200).json({token, user: dbUser}) 
+        await EventBus.sendEvent(process.env.EXCHANGE_NAME || 'asdf', EventBus.createEvent("USER_LOGGED_IN", JSON.stringify(dbUser.dataValues)))
     }
 )
 
@@ -42,9 +44,14 @@ app.post('/signup',
         }
         const userPassword = await authUtils.generatePassword(req.body.password)
         const user = await User()
-        const newUser = await user.create({userName: req.body.username, userPassword})
-        const token = authUtils.signToken(newUser.dataValues)   
-        res.status(200).json({token, user: newUser})     
+        try{
+            const newUser = await user.create({userName: req.body.username, userPassword})
+            const token = authUtils.signToken(newUser.dataValues)   
+            res.status(200).json({token, user: newUser})
+            await EventBus.sendEvent(process.env.EXCHANGE_NAME || 'asdf', EventBus.createEvent("USER_SIGNED_UP", JSON.stringify(newUser.dataValues)))
+        } catch(e){
+            return next(e)
+        }
     }
 )
 
@@ -54,7 +61,6 @@ function getMessageFromArray(array){
         }, ""
     );
 }
-
 
 app.use('*', (err, req, res, next) => {
     res.status(418).json({error: err.message})
