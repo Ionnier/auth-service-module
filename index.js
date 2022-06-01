@@ -6,6 +6,9 @@ const authUtils = require('./utils/authUtils')
 const EventBus = require('./EventBus')
 
 const app = express()
+const cors = require('cors')
+
+app.use(cors())
 
 app.post('/login', 
     express.json(),
