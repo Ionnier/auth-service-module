@@ -21,7 +21,9 @@ app.post('/login',
             return next(new Error(msg))
         }
         const user = await User() 
-        const dbUser = await user.findOne({userName: req.body.username})
+        const dbUser = await user.findOne({
+            where:{userName: req.body.username}
+        })
         if (!dbUser){
             return next(new Error('No such user'))
         }
